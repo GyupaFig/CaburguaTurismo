@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Caburgua Turístico — Guía de Servicios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Leaflet (Mapa) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIJ3N3Vn6QqXY3B7RkS1VQmA0M0bY=0="
+    crossorigin=""
+    defer
+  ></script>
+
+  <!-- Inter (fuente) -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#12172a; --muted:#778; --text:#eaf0ff;
+      --primary:#4cc9f0; --primary-700:#2496bf; --accent:#80ffdb; --danger:#ff6b6b;
+      --card:#171d35; --chip:#1f2745; --ok:#3adb8b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      color:var(--text); background:linear-gradient(180deg,#0b1020 0%, #101737 100%);
+    }
+    header{
+      position:sticky; top:0; z-index:5;
+      background:rgba(11,16,32,.75); backdrop-filter: blur(12px);
+      border-bottom:1px solid #ffffff12;
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:16px 20px;}
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand .logo{
+      width:36px; height:36px; border-radius:10px;
+      background: conic-gradient(from 180deg at 50% 50%, var(--primary), var(--accent), var(--primary));
+      box-shadow: 0 0 0 2px #ffffff0f inset, 0 10px 30px #0008;
+    }
+    .brand h1{font-size:1.1rem; margin:0}
+    .muted{color:var(--muted)}
+
+    .toolbar{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;
+      align-items:center
+    }
+    .search{
+      flex:1; min-width:220px; display:flex; align-items:center; gap:8px;
+      background:var(--panel); border:1px solid #ffffff14; border-radius:12px; padding:10px 12px;
+    }
+    .search input{
+      all:unset; flex:1; color:var(--text); font-size:14px; letter-spacing:.2px;
+    }
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    button, .chip{
+      border:0; cursor:pointer; border-radius:999px; padding:10px 14px; font-weight:600;
+      color:var(--text); background:var(--primary); transition:all .2s ease;
+      box-shadow:0 6px 20px #00c2ff22;
+    }
+    button:hover{background:var(--primary-700)}
+    .chip{
+      background:var(--chip); color:#d9e2ff; box-shadow:none; border:1px solid #ffffff12
+    }
+    .chip.active{background:var(--primary); color:#00111a; border-color:transparent}
+    .chip .dot{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; vertical-align:-1px}
+    .grid{
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; padding:16px 20px; max-width:1200px; margin:0 auto;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns: 1fr}
+      #map{order:2; height:420px}
+    }
+
+    /* Tarjetas */
+    .card{
+      background:var(--card); border:1px solid #ffffff12; border-radius:16px;
+      padding:14px; display:flex; gap:12px; align-items:flex-start; position:relative;
+    }
+    .card + .card{margin-top:10px}
+    .avatar{
+      width:56px; height:56px; border-radius:12px; flex:0 0 56px;
+      background:#223; display:grid; place-content:center; font-weight:700; color:#9bdcff;
+      border:1px solid #ffffff14;
+    }
+    .card h3{margin:2px 0 6px; font-size:1rem}
+    .badge{display:inline-flex; align-items:center; gap:6px; font-size:.72rem; padding:4px 8px; border-radius:999px; background:#1f2748; color:#bcd}
+    .badge .dot{width:8px; height:8px; border-radius:50%}
+    .tags{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+    .tag{font-size:.72rem; color:#bcd; background:#1a2141; border:1px solid #ffffff12; border-radius:999px; padding:4px 8px}
+    .meta{font-size:.86rem; color:#c8d2ff}
+    .meta a{color:#7ad8ff; text-decoration:none}
+    .meta a:hover{text-decoration:underline}
+    .cta{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+    .cta .ghost{
+      background:transparent; border:1px solid #ffffff22; box-shadow:none; color:#dff3ff
+    }
+    .cta .ghost:hover{background:#ffffff0e}
+    .right{margin-left:auto}
+    .empty{
+      text-align:center; color:var(--muted); padding:30px; border:1px dashed #ffffff22; border-radius:16px;
+      background:linear-gradient(180deg,#131939, #0f1631)
+    }
+
+    /* Mapa */
+    #map{height:560px; border:1px solid #ffffff12; border-radius:16px; overflow:hidden}
+
+    /* Modal */
+    dialog{
+      width:min(720px, 92vw); border:1px solid #ffffff22; border-radius:16px;
+      background:#0e152e; color:var(--text); padding:0; box-shadow: 0 20px 80px #000a;
+    }
+    dialog::backdrop{background:#0008}
+    .modal-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #ffffff18}
+    .modal-body{padding:16px 18px}
+    .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .form-grid .full{grid-column: 1 / -1}
+    label{display:block; font-size:.85rem; margin-bottom:6px; color:#b9c4ff}
+    input[type="text"], input[type="tel"], input[type="url"], select, textarea{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ffffff22; background:#0b1026; color:var(--text)
+    }
+    textarea{min-height:80px; resize:vertical}
+    .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:14px 18px; border-top:1px solid #ffffff18}
+    .helper{font-size:.8rem; color:#9db0ff}
+    .pill{display:inline-block; padding:6px 10px; background:#13204a; border-radius:999px; font-size:.78rem; color:#cfe6ff}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <h1>Caburgua Turístico <span class="muted">• Guía de Servicios</span></h1>
+        <span class="pill right" id="countPill">0 lugares</span>
+      </div>
+
+      <div class="toolbar">
+        <div class="search" role="search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#9db0ff" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.471 6.471 0 0 0 4.23-1.57l.27.28v.79L20 21.5 21.5 20l-6-6zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input id="q" type="text" placeholder="Buscar por nombre, etiqueta o dirección…" autocomplete="off" />
+        </div>
+
+        <div class="actions" aria-label="Filtros por categoría">
+          <button class="chip active" data-cat="all"><span class="dot" style="background:#9db0ff"></span> Todos</button>
+          <button class="chip" data-cat="Alojamientos"><span class="dot" style="background:#80ffdb"></span> Alojamientos</button>
+          <button class="chip" data-cat="Restaurantes"><span class="dot" style="background:#ffd166"></span> Restaurantes</button>
+          <button class="chip" data-cat="Abastecimiento"><span class="dot" style="background:#cdb4db"></span> Abastecimiento</button>
+          <button class="chip" data-cat="Actividades Outdoor"><span class="dot" style="background:#90e0ef"></span> Actividades Outdoor</button>
+          <button class="chip" data-cat="Parques"><span class="dot" style="background:#a0ffa0"></span> Parques</button>
+        </div>
+
+        <div class="actions">
+          <button id="btnAdd">Añadir lugar</button>
+          <button id="btnReset" class="ghost">Reiniciar datos</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section id="list"></section>
+    <aside id="map"></aside>
+  </main>
+
+  <!-- Modal Añadir -->
+  <dialog id="addModal">
+    <form id="addForm" method="dialog">
+      <div class="modal-head">
+        <strong>Nuevo lugar</strong>
+        <button type="button" id="closeModal" class="ghost">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <p class="helper">
+          Rellena los datos. Si no sabes las coordenadas, abre Google Maps, busca el lugar, clic derecho → “¿Qué hay aquí?” y copia **lat, lng**.
+        </p>
+        <div class="form-grid">
+          <div>
+            <label>Nombre</label>
+            <input required name="name" type="text" placeholder="Ej: Cabañas Vista Caburgua" />
+          </div>
+          <div>
+            <label>Categoría</label>
+            <select required name="category">
+              <option value="">Seleccionar…</option>
+              <option>Alojamientos</option>
+              <option>Restaurantes</option>
+              <option>Abastecimiento</option>
+              <option>Actividades Outdoor</option>
+              <option>Parques</option>
+            </select>
+          </div>
+          <div class="full">
+            <label>Dirección</label>
+            <input name="address" type="text" placeholder="Ruta S-911 km 3, Caburgua" />
+          </div>
+          <div>
+            <label>Latitud</label>
+            <input required name="lat" type="text" placeholder="-39.118" />
+          </div>
+          <div>
+            <label>Longitud</label>
+            <input required name="lng" type="text" placeholder="-71.712" />
+          </div>
+          <div>
+            <label>Teléfono</label>
+            <input name="phone" type="tel" placeholder="+56 9 1234 5678" />
+          </div>
+          <div>
+            <label>Web o RRSS (URL)</label>
+            <input name="url" type="url" placeholder="https://…" />
+          </div>
+          <div class="full">
+            <label>Etiquetas (coma separadas)</label>
+            <input name="tags" type="text" placeholder="cabañas, chimenea, wifi" />
+          </div>
+          <div class="full">
+            <label>Descripción</label>
+            <textarea name="desc" placeholder="Breve descripción del servicio…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="ghost" id="cancelAdd">Cancelar</button>
+        <button type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // --------- Datos iniciales (EJEMPLOS) ----------
+    // Reemplaza estos con lugares reales. Se almacenan en localStorage como "caburgua.data".
+    const seedData = [
+      {
+        id: cryptoRandomId(), name: "Cabañas Bosque Azul (Ejemplo)", category: "Alojamientos",
+        lat: -39.1189, lng: -71.7123, address: "Sector Caburgua Alto",
+        phone:"+56 9 1234 5678", url:"", tags:["cabañas","familiar","estacionamiento"], desc:"Cabañas equipadas cercanas al lago."
+      },
+      {
+        id: cryptoRandomId(), name: "Restaurante Orillas del Lago (Ejemplo)", category: "Restaurantes",
+        lat: -39.125, lng: -71.724, address: "Playa Negra, Lago Caburgua",
+        phone:"", url:"", tags:["pescados","mariscos","vista al lago"], desc:"Cocina local con productos de la zona."
+      },
+      {
+        id: cryptoRandomId(), name: "Minimarket Caburgua Center (Ejemplo)", category: "Abastecimiento",
+        lat: -39.122, lng: -71.717, address: "Centro de Caburgua",
+        phone:"", url:"", tags:["abarrotes","verduras","tarjetas"], desc:"Abierto todo el año."
+      },
+      {
+        id: cryptoRandomId(), name: "Kayak & SUP Caburgua (Ejemplo)", category: "Actividades Outdoor",
+        lat: -39.128, lng: -71.731, address: "Playa Blanca",
+        phone:"+56 9 9876 5432", url:"", tags:["kayak","sup","arriendo"], desc:"Arriendo de equipos y clases."
+      },
+      {
+        id: cryptoRandomId(), name: "Parque Trankura (Ejemplo)", category: "Parques",
+        lat: -39.14, lng: -71.69, address: "Camino a Pucón",
+        phone:"", url:"", tags:["senderismo","picnic"], desc:"Área verde para caminatas suaves."
+      }
+    ];
+
+    // --------- Estado / almacenamiento ----------
+    const STORE_KEY = "caburgua.data";
+    const state = {
+      data: [],
+      q: "",
+      category: "all",
+      markers: [],
+      map: null,
+      layer: null
+    };
+
+    function loadData(){
+      const saved = localStorage.getItem(STORE_KEY);
+      if(saved){
+        try{
+          const parsed = JSON.parse(saved);
+          if(Array.isArray(parsed) && parsed.length){
+            state.data = parsed;
+            return;
+          }
+        }catch(e){ console.warn("No se pudo leer localStorage", e); }
+      }
+      state.data = seedData;
+      persist();
+    }
+
+    function persist(){
+      localStorage.setItem(STORE_KEY, JSON.stringify(state.data));
+      updateCount();
+    }
+
+    function resetData(){
+      localStorage.removeItem(STORE_KEY);
+      state.data = seedData;
+      persist();
+      render();
+      flyToFirst();
+    }
+
+    function updateCount(){
+      const pill = document.getElementById("countPill");
+      const n = state.data.length;
+      pill.textContent = `${n} lugar${n===1?"":"es"}`;
+    }
+
+    // --------- Utilidades ----------
+    function cryptoRandomId(){
+      // ID estable y corto
+      if(window.crypto && crypto.randomUUID){
+        return crypto.randomUUID();
+      }
+      return 'id-' + Math.random().toString(36).slice(2,10);
+    }
+
+    function phoneLink(phone){
+      if(!phone) return null;
+      const cleaned = phone.replace(/[^\d+]/g,'');
+      return `tel:${cleaned}`;
+    }
+
+    function mapsLink(lat,lng){
+      return `https://www.google.com/maps?q=${lat},${lng}`;
+    }
+
+    function iconEmoji(category){
+      switch(category){
+        case "Alojamientos": return "🏡";
+        case "Restaurantes": return "🍽️";
+        case "Abastecimiento": return "🛒";
+        case "Actividades Outdoor": return "🛶";
+        case "Parques": return "🌲";
+        default: return "📍";
+      }
+    }
+
+    function colorByCategory(category){
+      return {
+        "Alojamientos":"#80ffdb",
+        "Restaurantes":"#ffd166",
+        "Abastecimiento":"#cdb4db",
+        "Actividades Outdoor":"#90e0ef",
+        "Parques":"#a0ffa0",
+        "default":"#9db0ff"
+      }[category] || "#9db0ff";
+    }
+
+    // --------- Filtros ----------
+    function applyFilters(){
+      const q = state.q.trim().toLowerCase();
+      const cat = state.category;
+      return state.data.filter(it=>{
+        const matchesCat = (cat==="all") || (it.category===cat);
+        const haystack = [
+          it.name, it.address, it.category, (it.desc||""), (it.tags||[]).join(" ")
+        ].join(" ").toLowerCase();
+        const matchesQ = (!q) || haystack.includes(q);
+        return matchesCat && matchesQ;
+      });
+    }
+
+    // --------- Render listado ----------
+    function render(){
+      const list = document.getElementById("list");
+      const results = applyFilters();
+
+      // Limpia lista
+      list.innerHTML = "";
+
+      if(!results.length){
+        list.innerHTML = `<div class="empty">No hay resultados. Prueba con otra búsqueda o categoría.</div>`;
+      } else {
+        results
+          .sort((a,b)=> a.name.localeCompare(b.name, 'es'))
+          .forEach(it=>{
+            const card = document.createElement("article");
+            card.className = "card";
+            card.innerHTML = `
+              <div class="avatar" style="border-color:${colorByCategory(it.category)}55">${iconEmoji(it.category)}</div>
+              <div class="content">
+                <h3>${escapeHTML(it.name)}</h3>
+                <div class="meta">
+                  <span class="badge">
+                    <span class="dot" style="background:${colorByCategory(it.category)}"></span>
+                    ${it.category}
+                  </span>
+                  ${it.address ? ` • ${escapeHTML(it.address)}` : ""}
+                </div>
+                ${it.desc ? `<p class="muted" style="margin:.4rem 0 .3rem">${escapeHTML(it.desc)}</p>` : ""}
+                ${Array.isArray(it.tags) && it.tags.length ? `
+                  <div class="tags">
+                    ${it.tags.slice(0,6).map(t=>`<span class="tag">#${escapeHTML(t)}</span>`).join("")}
+                  </div>` : ""
+                }
+                <div class="cta">
+                  <a class="chip" target="_blank" href="${mapsLink(it.lat,it.lng)}">Cómo llegar</a>
+                  ${it.phone ? `<a class="chip ghost" href="${phoneLink(it.phone)}">Llamar</a>` : ""}
+                  ${it.url ? `<a class="chip ghost" target="_blank" href="${it.url}">Sitio / RRSS</a>` : ""}
+                  <button class="chip ghost" data-focus="${it.id}">Ver en mapa</button>
+                </div>
+              </div>
+            `;
+            card.querySelector('[data-focus]')?.addEventListener('click', ()=>{
+              focusOn(it.id);
+              window.scrollTo({top:0, behavior:"smooth"});
+            });
+            list.appendChild(card);
+          });
+      }
+
+      // Mapa
+      drawMarkers(results);
+    }
+
+    // --------- Mapa ----------
+    function initMap(){
+      state.map = L.map('map', { zoomControl: true, scrollWheelZoom: true })
+        .setView([-39.123, -71.72], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(state.map);
+
+      state.layer = L.layerGroup().addTo(state.map);
+      drawMarkers(applyFilters());
+      flyToFirst();
+    }
+
+    function drawMarkers(items){
+      state.layer.clearLayers();
+      state.markers = [];
+
+      items.forEach(it=>{
+        const html = `
+          <div style="min-width:220px">
+            <strong>${escapeHTML(it.name)}</strong><br/>
+            <small>${it.category}${it.address? " • "+escapeHTML(it.address):""}</small>
+            ${it.desc ? `<p style="margin:.5rem 0">${escapeHTML(it.desc)}</p>`:""}
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
+              <a href="${mapsLink(it.lat,it.lng)}" target="_blank">Cómo llegar</a>
+              ${it.phone ? `• <a href="${phoneLink(it.phone)}">Llamar</a>`:""}
+              ${it.url ? `• <a href="${it.url}" target="_blank">Web/RRSS</a>`:""}
+            </div>
+          </div>
+        `;
+        const marker = L.circleMarker([it.lat, it.lng], {
+          radius: 8,
+          color: colorByCategory(it.category),
+          fillColor: colorByCategory(it.category),
+          fillOpacity: 0.85,
+          weight: 2
+        }).bindPopup(html);
+
+        marker.addTo(state.layer);
+        state.markers.push({id: it.id, marker});
+      });
+
+      if(items.length){
+        const bounds = L.latLngBounds(items.map(i=>[i.lat,i.lng]));
+        state.map.fitBounds(bounds, {padding:[24,24]});
+      }
+    }
+
+    function focusOn(id){
+      const hit = state.markers.find(m=>m.id===id);
+      if(hit){
+        hit.marker.openPopup();
+        state.map.setView(hit.marker.getLatLng(), Math.max(state.map.getZoom(), 15), {animate:true});
+      }
+    }
+
+    function flyToFirst(){
+      const items = applyFilters();
+      if(items.length){
+        state.map.flyTo([items[0].lat, items[0].lng], 14, {duration:.7});
+      }
+    }
+
+    // --------- Búsqueda y chips ----------
+    function setupUI(){
+      const input = document.getElementById("q");
+      input.addEventListener("input", (e)=>{
+        state.q = e.target.value;
+        render();
+      });
+
+      document.querySelectorAll(".chip[data-cat]").forEach(ch=>{
+        ch.addEventListener("click", ()=>{
+          document.querySelectorAll(".chip[data-cat]").forEach(c=>c.classList.remove("active"));
+          ch.classList.add("active");
+          state.category = ch.dataset.cat;
+          render();
+        });
+      });
+
+      document.getElementById("btnAdd").addEventListener("click", ()=> addModal.showModal());
+      document.getElementById("btnReset").addEventListener("click", resetData);
+    }
+
+    // --------- Modal añadir ----------
+    const addModal = document.getElementById("addModal");
+    document.getElementById("closeModal").addEventListener("click", ()=> addModal.close());
+    document.getElementById("cancelAdd").addEventListener("click", ()=> addModal.close());
+
+    document.getElementById("addForm").addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const item = {
+        id: cryptoRandomId(),
+        name: (fd.get("name")||"").toString().trim(),
+        category: (fd.get("category")||"").toString(),
+        address: (fd.get("address")||"").toString().trim(),
+        lat: parseFloat(fd.get("lat")),
+        lng: parseFloat(fd.get("lng")),
+        phone: (fd.get("phone")||"").toString().trim(),
+        url: (fd.get("url")||"").toString().trim(),
+        tags: (fd.get("tags")||"").toString().split(",").map(t=>t.trim()).filter(Boolean),
+        desc: (fd.get("desc")||"").toString().trim()
+      };
+
+      // Validaciones mínimas
+      if(!item.name || !item.category || Number.isNaN(item.lat) || Number.isNaN(item.lng)){
+        alert("Por favor completa nombre, categoría y coordenadas válidas.");
+        return;
+      }
+
+      state.data.push(item);
+      persist();
+      render();
+      addModal.close();
+      focusOn(item.id);
+    });
+
+    // --------- Seguridad básica HTML ----------
+    function escapeHTML(s){
+      return (s??"").toString().replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[m]));
+    }
+
+    // --------- Boot ----------
+    window.addEventListener("DOMContentLoaded", ()=>{
+      loadData();
+      setupUI();
+      initMap();
+      render();
+    });
+  </script>
+</body>
+</html>
