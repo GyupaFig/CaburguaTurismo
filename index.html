@@ -24,17 +24,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg:#0b1020; --panel:#12172a; --muted:#778; --text:#eaf0ff;
-      --primary:#4cc9f0; --primary-700:#2496bf; --accent:#80ffdb; --danger:#ff6b6b;
-      --card:#171d35; --chip:#1f2745; --ok:#3adb8b;
-    }
+    :root{ --bg:#0b1020; --panel:#12172a; --muted:#778; --text:#eaf0ff; --primary:#4cc9f0; --primary-700:#2496bf; --accent:#80ffdb; --card:#171d35; --chip:#1f2745; }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      color:var(--text); background:linear-gradient(180deg,#0b1020 0%, #101737 100%);
-    }
+    body{ margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; color:var(--text); background:linear-gradient(180deg,#0b1020 0%, #101737 100%); }
     header{ position:sticky; top:0; z-index:5; background:rgba(11,16,32,.75); backdrop-filter: blur(12px); border-bottom:1px solid #ffffff12; }
     .wrap{max-width:1200px; margin:0 auto; padding:16px 20px;}
     .brand{display:flex; align-items:center; gap:12px}
@@ -52,7 +45,7 @@
     .chip .dot{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; vertical-align:-1px}
     .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; padding:16px 20px; max-width:1200px; margin:0 auto; }
     @media (max-width: 920px){ .grid{grid-template-columns: 1fr} #map{order:2; height:420px} }
-    .card{ background:var(--card); border:1px solid #ffffff12; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:flex-start; position:relative; }
+    .card{ background:var(--card); border:1px solid #ffffff12; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:flex-start; }
     .card + .card{margin-top:10px}
     .avatar{ width:56px; height:56px; border-radius:12px; flex:0 0 56px; background:#223; display:grid; place-content:center; font-weight:700; color:#9bdcff; border:1px solid #ffffff14; }
     .card h3{margin:2px 0 6px; font-size:1rem}
@@ -65,20 +58,15 @@
     .meta a:hover{text-decoration:underline}
     .cta{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
     .cta .ghost{ background:transparent; border:1px solid #ffffff22; box-shadow:none; color:#dff3ff }
-    .cta .ghost:hover{background:#ffffff0e}
-    .right{margin-left:auto}
-    .empty{ text-align:center; color:var(--muted); padding:30px; border:1px dashed #ffffff22; border-radius:16px; background:linear-gradient(180deg,#131939, #0f1631) }
     #map{height:560px; border:1px solid #ffffff12; border-radius:16px; overflow:hidden}
-    dialog{ width:min(720px, 92vw); border:1px solid #ffffff22; border-radius:16px; background:#0e152e; color:var(--text); padding:0; box-shadow: 0 20px 80px #000a; }
+    dialog{ width:min(720px, 92vw); border:1px solid #ffffff22; border-radius:16px; background:#0e152e; color:#eaf0ff; padding:0; box-shadow: 0 20px 80px #000a; }
     dialog::backdrop{background:#0008}
     .modal-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #ffffff18}
     .modal-body{padding:16px 18px}
     .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .form-grid .full{grid-column: 1 / -1}
     label{display:block; font-size:.85rem; margin-bottom:6px; color:#b9c4ff}
-    input[type="text"], input[type="tel"], input[type="url"], select, textarea{
-      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ffffff22; background:#0b1026; color:var(--text)
-    }
+    input[type="text"], input[type="tel"], input[type="url"], select, textarea{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ffffff22; background:#0b1026; color:#eaf0ff }
     textarea{min-height:80px; resize:vertical}
     .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:14px 18px; border-top:1px solid #ffffff18}
     .helper{font-size:.8rem; color:#9db0ff}
@@ -130,9 +118,7 @@
         <button type="button" id="closeModal" class="ghost">Cerrar</button>
       </div>
       <div class="modal-body">
-        <p class="helper">
-          Rellena los datos. Si no sabes las coordenadas, abre Google Maps, busca el lugar, clic derecho → “¿Qué hay aquí?” y copia lat, lng.
-        </p>
+        <p class="helper">Si no sabes las coordenadas: en Google Maps → clic derecho → “¿Qué hay aquí?” y copia lat,lng.</p>
         <div class="form-grid">
           <div><label>Nombre</label><input required name="name" type="text" placeholder="Ej: Cabañas Vista Caburgua" /></div>
           <div><label>Categoría</label>
@@ -158,7 +144,9 @@
     </form>
   </dialog>
 
-  <!-- Conecta con tu JS modular -->
-  <script type="module" src="./src/main.js?v=4"></script>
+  <!-- JS modular -->
+  <script type="module" src="./src/main.js?v=5"></script>
 </body>
 </html>
+
+
