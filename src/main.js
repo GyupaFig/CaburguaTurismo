@@ -4,7 +4,7 @@ import { initSeed, getSeedData } from "./data/seedData.js";
 // ---------- Estado ----------
 const state = { data: [], q: "", category: "all", markers: [], map: null, layer: null };
 
-// ---------- Adaptador: seed -> formato UI ----------
+// ---------- Adaptador: seed -> formato UI (para tus chips/lista) ----------
 const CAT_MAP = {
   alojamiento: "Alojamientos",
   restaurante: "Restaurantes",
@@ -25,7 +25,7 @@ function adaptSeedItem(s) {
     phone: (s.phones && s.phones[0]) || "",
     url: s.social?.web || s.social?.instagram || s.social?.facebook || "",
     tags: s.tags || [],
-    desc: "" // opcional; tu seed no trae descripción
+    desc: "" // opcional
   };
 }
 
@@ -33,23 +33,18 @@ function adaptSeedItem(s) {
 function cryptoRandomId(){ return (crypto.randomUUID?.() ?? `id-${Math.random().toString(36).slice(2,10)}`); }
 function phoneLink(p){ if(!p) return null; return `tel:${p.replace(/[^\d+]/g,'')}`; }
 function mapsLink(lat,lng){ return `https://www.google.com/maps?q=${lat},${lng}`; }
-function iconEmoji(category){
-  return { "Alojamientos":"🏡","Restaurantes":"🍽️","Abastecimiento":"🛒","Actividades Outdoor":"🛶","Parques":"🌲" }[category] || "📍";
-}
-function colorByCategory(category){
-  return { "Alojamientos":"#80ffdb","Restaurantes":"#ffd166","Abastecimiento":"#cdb4db","Actividades Outdoor":"#90e0ef","Parques":"#a0ffa0","default":"#9db0ff" }[category] || "#9db0ff";
-}
+function iconEmoji(category){ return { "Alojamientos":"🏡","Restaurantes":"🍽️","Abastecimiento":"🛒","Actividades Outdoor":"🛶","Parques":"🌲" }[category] || "📍"; }
+function colorByCategory(category){ return { "Alojamientos":"#80ffdb","Restaurantes":"#ffd166","Abastecimiento":"#cdb4db","Actividades Outdoor":"#90e0ef","Parques":"#a0ffa0","default":"#9db0ff" }[category] || "#9db0ff"; }
 function escapeHTML(s){ return (s??"").toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 // ---------- Carga de datos desde seed ----------
 async function loadDataFromSeed(){
-  const status = await initSeed();        // aplica autoreset + lanza geocoder en background
+  const status = await initSeed(); // aplica autoreset y lanza geocoder en background
   console.info("[seed] init:", status);
 
-  const raw = getSeedData();              // lee array del localStorage
-  state.data = raw
-    .map(adaptSeedItem)
-    .filter(x => Number.isFinite(x.lat) && Number.isFinite(x.lng));
+  const raw = getSeedData();
+  // 👇 MOSTRAR TODO EN LA LISTA (aunque no tenga coords todavía)
+  state.data = raw.map(adaptSeedItem);
   updateCount();
 }
 
@@ -77,7 +72,7 @@ function render(){
   list.innerHTML = "";
 
   if(!results.length){
-    list.innerHTML = `<div class="empty">No hay resultados. Prueba con otra búsqueda o categoría.</div>`;
+    list.innerHTML = `<div class="empty">No hay resultados. Prueba otra búsqueda o categoría.</div>`;
   } else {
     results.sort((a,b)=> a.name.localeCompare(b.name, 'es')).forEach(it=>{
       const card = document.createElement("article");
@@ -93,10 +88,10 @@ function render(){
           ${it.desc ? `<p class="muted" style="margin:.4rem 0 .3rem">${escapeHTML(it.desc)}</p>` : ""}
           ${Array.isArray(it.tags) && it.tags.length ? `<div class="tags">${it.tags.slice(0,6).map(t=>`<span class="tag">#${escapeHTML(t)}</span>`).join("")}</div>` : ""}
           <div class="cta">
-            <a class="chip" target="_blank" href="${mapsLink(it.lat,it.lng)}">Cómo llegar</a>
+            ${Number.isFinite(it.lat) && Number.isFinite(it.lng) ? `<a class="chip" target="_blank" href="${mapsLink(it.lat,it.lng)}">Cómo llegar</a>` : `<span class="chip" style="opacity:.6; pointer-events:none">Sin mapa aún</span>`}
             ${it.phone ? `<a class="chip ghost" href="${phoneLink(it.phone)}">Llamar</a>` : ""}
             ${it.url ? `<a class="chip ghost" target="_blank" href="${it.url}">Sitio / RRSS</a>` : ""}
-            <button class="chip ghost" data-focus="${it.id}">Ver en mapa</button>
+            ${Number.isFinite(it.lat) && Number.isFinite(it.lng) ? `<button class="chip ghost" data-focus="${it.id}">Ver en mapa</button>` : ""}
           </div>
         </div>`;
       card.querySelector('[data-focus]')?.addEventListener('click', ()=>{
@@ -115,32 +110,25 @@ function initMap(){
   const ready = () => typeof L !== "undefined";
   if (!ready()) { const t = setInterval(()=>{ if (ready()){ clearInterval(t); initMap(); } }, 50); return; }
 
-  state.map = L.map('map', { zoomControl: true, scrollWheelZoom: true })
-    .setView([-39.2, -71.81], 12);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; OpenStreetMap'
-  }).addTo(state.map);
-
+  state.map = L.map('map', { zoomControl: true, scrollWheelZoom: true }).setView([-39.2, -71.81], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(state.map);
   state.layer = L.layerGroup().addTo(state.map);
   drawMarkers(applyFilters());
   flyToFirst();
 }
 
 function drawMarkers(items){
+  // 👇 Dibujar solo los que YA tengan coords
+  items = items.filter(i => Number.isFinite(i.lat) && Number.isFinite(i.lng));
+
   state.layer.clearLayers();
   state.markers = [];
+
   items.forEach(it=>{
     const html = `
       <div style="min-width:220px">
         <strong>${escapeHTML(it.name)}</strong><br/>
         <small>${it.category}${it.address? " • "+escapeHTML(it.address):""}</small>
-        ${it.desc ? `<p style="margin:.5rem 0">${escapeHTML(it.desc)}</p>`:""}
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
-          <a href="${mapsLink(it.lat,it.lng)}" target="_blank">Cómo llegar</a>
-          ${it.phone ? `• <a href="${phoneLink(it.phone)}">Llamar</a>`:""}
-          ${it.url ? `• <a href="${it.url}" target="_blank">Web/RRSS</a>`:""}
-        </div>
       </div>`;
     const marker = L.circleMarker([it.lat, it.lng], {
       radius: 8, color: colorByCategory(it.category), fillColor: colorByCategory(it.category),
@@ -164,7 +152,7 @@ function focusOn(id){
   }
 }
 function flyToFirst(){
-  const items = applyFilters();
+  const items = applyFilters().filter(i => Number.isFinite(i.lat) && Number.isFinite(i.lng));
   if(items.length){ state.map.flyTo([items[0].lat, items[0].lng], 14, {duration:.7}); }
 }
 
@@ -186,9 +174,7 @@ function setupUI(){
   document.getElementById("btnAdd").addEventListener("click", ()=> addModal.showModal());
   document.getElementById("closeModal").addEventListener("click", ()=> addModal.close());
   document.getElementById("cancelAdd").addEventListener("click", ()=> addModal.close());
-  document.getElementById("btnReset").addEventListener("click", ()=>{
-    localStorage.clear(); location.reload();
-  });
+  document.getElementById("btnReset").addEventListener("click", ()=>{ localStorage.clear(); location.reload(); });
 
   document.getElementById("addForm").addEventListener("submit", (e)=>{
     e.preventDefault();
@@ -207,11 +193,7 @@ function setupUI(){
     if(!item.name || !item.category || Number.isNaN(item.lat) || Number.isNaN(item.lng)){
       alert("Por favor completa nombre, categoría y coordenadas válidas."); return;
     }
-    state.data.push(item);
-    updateCount();
-    render();
-    addModal.close();
-    focusOn(item.id);
+    state.data.push(item); updateCount(); render(); addModal.close(); focusOn(item.id);
   });
 }
 
@@ -222,6 +204,6 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   initMap();
   render();
 
-  // Si el geocoder del seed completa coords faltantes, refrescamos
+  // Cuando el geocoder termine de completar coords, refrescamos datos/markers
   window.addEventListener("seed:geocoded", () => { loadDataFromSeed().then(render); });
 });
