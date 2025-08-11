@@ -238,33 +238,79 @@
     // --------- Datos iniciales (EJEMPLOS) ----------
     // Reemplaza estos con lugares reales. Se almacenan en localStorage como "caburgua.data".
     const seedData = [
-      {
-        id: cryptoRandomId(), name: "Cabañas Bosque Azul (Ejemplo)", category: "Alojamientos",
-        lat: -39.1189, lng: -71.7123, address: "Sector Caburgua Alto",
-        phone:"+56 9 1234 5678", url:"", tags:["cabañas","familiar","estacionamiento"], desc:"Cabañas equipadas cercanas al lago."
-      },
-      {
-        id: cryptoRandomId(), name: "Restaurante Orillas del Lago (Ejemplo)", category: "Restaurantes",
-        lat: -39.125, lng: -71.724, address: "Playa Negra, Lago Caburgua",
-        phone:"", url:"", tags:["pescados","mariscos","vista al lago"], desc:"Cocina local con productos de la zona."
-      },
-      {
-        id: cryptoRandomId(), name: "Minimarket Caburgua Center (Ejemplo)", category: "Abastecimiento",
-        lat: -39.122, lng: -71.717, address: "Centro de Caburgua",
-        phone:"", url:"", tags:["abarrotes","verduras","tarjetas"], desc:"Abierto todo el año."
-      },
-      {
-        id: cryptoRandomId(), name: "Kayak & SUP Caburgua (Ejemplo)", category: "Actividades Outdoor",
-        lat: -39.128, lng: -71.731, address: "Playa Blanca",
-        phone:"+56 9 9876 5432", url:"", tags:["kayak","sup","arriendo"], desc:"Arriendo de equipos y clases."
-      },
-      {
-        id: cryptoRandomId(), name: "Parque Trankura (Ejemplo)", category: "Parques",
-        lat: -39.14, lng: -71.69, address: "Camino a Pucón",
-        phone:"", url:"", tags:["senderismo","picnic"], desc:"Área verde para caminatas suaves."
-      }
-    ];
-
+  {
+    id: "dd4863eb-1c58-489d-9d9b-76010ed0e349",
+    name: "Cabañas Victoriano",
+    category: "Alojamientos",
+    lat: -39.1231,
+    lng: -71.7206,
+    address: "Sector Playa Negra, a 6 cuadras del lago",
+    phone: "",
+    url: "https://caburguaturismo.cl/project/cabanas-victoriano/",
+    tags: ["cabañas", "domos", "familiar"],
+    desc: "Cabañas y domos para 4 a 6 personas cerca del Lago Caburgua."
+  },
+  {
+    id: "743e7d84-333d-4529-a5bb-62fd3a02dbc7",
+    name: "Portal Costanera Caburgua",
+    category: "Alojamientos",
+    lat: -39.1215,
+    lng: -71.7184,
+    address: "Caburgua",
+    phone: "",
+    url: "https://caburguaturismo.cl/project/portal-costanera-caburgua/",
+    tags: ["cabañas", "climatizadas", "estacionamiento"],
+    desc: "Cabañas climatizadas totalmente equipadas, cada una con estacionamiento."
+  },
+  {
+    id: "4b361dd9-74b0-4134-9611-904a4ab30217",
+    name: "Restaurante Cumbres de Caburgua",
+    category: "Restaurantes",
+    lat: -39.1244,
+    lng: -71.7191,
+    address: "Caburgua",
+    phone: "",
+    url: "https://caburguaturismo.cl/socios/restaurante-cumbres-de-caburgua/",
+    tags: ["comida típica", "gourmet", "vegano"],
+    desc: "Platos preparados y productos gourmet; opciones veganas y pet friendly."
+  },
+  {
+    id: "5990c21c-a8b0-4657-970e-73d0440b1d43",
+    name: "Restaurantes Brisas del Caburgua",
+    category: "Restaurantes",
+    lat: -39.1248,
+    lng: -71.7187,
+    address: "Caburgua",
+    phone: "",
+    url: "https://caburguaturismo.cl/socios/restaurantes-brisas-del-caburgua/",
+    tags: ["comida chilena", "parrilladas", "pastas"],
+    desc: "Restaurante de comida chilena y fusión; plato estrella salmón glaseado."
+  },
+  {
+    id: "feb01022-3c07-44c6-a861-f3121bac6d3e",
+    name: "Restaurant Los Castillos",
+    category: "Restaurantes",
+    lat: -39.1251,
+    lng: -71.7182,
+    address: "Caburgua",
+    phone: "",
+    url: "https://caburguaturismo.cl/socios/restaurant-los-castillos/",
+    tags: ["típica chilena", "familiar", "todo el año"],
+    desc: "Restaurante familiar con más de 30 años, comida típica todo el año."
+  },
+  {
+    id: "f40163e2-07d1-4c6d-9104-d335b5119d75",
+    name: "Restaurant Playa Caburgua",
+    category: "Restaurantes",
+    lat: -39.126,
+    lng: -71.7175,
+    address: "Playa Caburgua",
+    phone: "",
+    url: "https://caburguaturismo.cl/socios/restaurant-playa-caburgua/",
+    tags: ["vista panorámica", "típica chilena"],
+    desc: "Comida típica chilena con excelente vista panorámica del sector."
+  }
+];
     // --------- Estado / almacenamiento ----------
     const STORE_KEY = "caburgua.data";
     const state = {
@@ -555,3 +601,4 @@
   </script>
 </body>
 </html>
+
