@@ -1,5 +1,9 @@
-// src/main.js
+// src/main.js — con switch ADMIN y mejoras de UX
 import { initSeed, getSeedData } from "./data/seedData.js";
+
+// ======= SWITCH PRODUCCIÓN =======
+const ADMIN = false; // <- pon true si quieres ver botones admin y "Ubicar en mapa"
+// =================================
 
 // ---------- Estado ----------
 const state = {
@@ -9,11 +13,11 @@ const state = {
   markers: [],
   map: null,
   layer: null,
-  locatingId: null,   // id del item que estoy ubicando a mano
+  locatingId: null,
   mapClickHandler: null
 };
 
-// ---------- Adaptador: seed -> formato UI ----------
+// ---------- Adaptador seed -> UI ----------
 const CAT_MAP = {
   alojamiento: "Alojamientos",
   restaurante: "Restaurantes",
@@ -38,7 +42,7 @@ function adaptSeedItem(s) {
   };
 }
 
-// ---------- Utilidades ----------
+// ---------- Utils ----------
 function cryptoRandomId(){ return (crypto.randomUUID?.() ?? `id-${Math.random().toString(36).slice(2,10)}`); }
 function phoneLink(p){ if(!p) return null; return `tel:${p.replace(/[^\d+]/g,'')}`; }
 function mapsLink(lat,lng){ return `https://www.google.com/maps?q=${lat},${lng}`; }
@@ -46,13 +50,12 @@ function iconEmoji(category){ return { "Alojamientos":"🏡","Restaurantes":"�
 function colorByCategory(category){ return { "Alojamientos":"#80ffdb","Restaurantes":"#ffd166","Abastecimiento":"#cdb4db","Actividades Outdoor":"#90e0ef","Parques":"#a0ffa0","default":"#9db0ff" }[category] || "#9db0ff"; }
 function escapeHTML(s){ return (s??"").toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-// ---------- Carga de datos ----------
+// ---------- Carga de seed ----------
 async function loadDataFromSeed(){
-  const status = await initSeed(); // versión + seed (sin geocoder)
+  const status = await initSeed();
   console.info("[seed] init:", status);
-
   const raw = getSeedData();
-  state.data = raw.map(adaptSeedItem); // 👈 mostrar todo en la lista, con o sin coords
+  state.data = raw.map(adaptSeedItem);
   updateCount();
 }
 
@@ -86,6 +89,18 @@ function render(){
       const card = document.createElement("article");
       card.className = "card";
       const hasCoords = Number.isFinite(it.lat) && Number.isFinite(it.lng);
+
+      const locateBtn = ADMIN && !hasCoords
+        ? `<button class="chip" data-locate="${it.id}" title="Asignar ubicación">Ubicar en mapa</button>`
+        : (!hasCoords ? `<span class="chip" style="background:#2a2f4d;border:1px solid #ffffff22">Sin coordenadas</span>` : "");
+
+      const focusBtn = hasCoords
+        ? `<button class="chip ghost" data-focus="${it.id}">Ver en mapa</button>`
+        : "";
+
+      const callBtn = it.phone ? `<a class="chip ghost" href="${phoneLink(it.phone)}">Llamar</a>` : "";
+      const webBtn  = it.url ? `<a class="chip ghost" target="_blank" href="${it.url}">Sitio / RRSS</a>` : "";
+
       card.innerHTML = `
         <div class="avatar" style="border-color:${colorByCategory(it.category)}55">${iconEmoji(it.category)}</div>
         <div class="content">
@@ -97,19 +112,19 @@ function render(){
           ${it.desc ? `<p class="muted" style="margin:.4rem 0 .3rem">${escapeHTML(it.desc)}</p>` : ""}
           ${Array.isArray(it.tags) && it.tags.length ? `<div class="tags">${it.tags.slice(0,6).map(t=>`<span class="tag">#${escapeHTML(t)}</span>`).join("")}</div>` : ""}
           <div class="cta">
-            ${hasCoords ? `<a class="chip" target="_blank" href="${mapsLink(it.lat,it.lng)}">Cómo llegar</a>` : `<button class="chip" data-locate="${it.id}" title="Asignar ubicación">Ubicar en mapa</button>`}
-            ${it.phone ? `<a class="chip ghost" href="${phoneLink(it.phone)}">Llamar</a>` : ""}
-            ${it.url ? `<a class="chip ghost" target="_blank" href="${it.url}">Sitio / RRSS</a>` : ""}
-            ${hasCoords ? `<button class="chip ghost" data-focus="${it.id}">Ver en mapa</button>` : ""}
+            ${hasCoords ? `<a class="chip" target="_blank" href="${mapsLink(it.lat,it.lng)}">Cómo llegar</a>` : ""}
+            ${locateBtn}
+            ${callBtn}
+            ${webBtn}
+            ${focusBtn}
           </div>
         </div>`;
+
       card.querySelector('[data-focus]')?.addEventListener('click', ()=>{
         focusOn(it.id);
         window.scrollTo({top:0, behavior:"smooth"});
       });
-      card.querySelector('[data-locate]')?.addEventListener('click', ()=>{
-        startLocating(it.id);
-      });
+      card.querySelector('[data-locate]')?.addEventListener('click', ()=> startLocating(it.id));
       list.appendChild(card);
     });
   }
@@ -169,41 +184,35 @@ function flyToFirst(){
 
 // ---------- Modo “Ubicar en mapa” ----------
 function startLocating(id){
+  if (!ADMIN) return; // en producción no se usa
   state.locatingId = id;
   document.body.style.cursor = "crosshair";
-  document.getElementById("locatingPill").style.display = "inline-block";
-  document.getElementById("hint").style.display = "inline-block";
+  showLocatingUI(true);
 
-  // Limpia handler anterior
-  if (state.mapClickHandler) { state.map.off('click', state.mapClickHandler); }
+  if (state.mapClickHandler) state.map.off('click', state.mapClickHandler);
   state.mapClickHandler = (e) => {
     const { lat, lng } = e.latlng;
     saveCoordsToSeed(id, lat, lng);
     stopLocating();
-    // Pequeño efecto: abrir popup
-    const marker = L.circleMarker([lat, lng], { radius: 8, color: "#4cc9f0", fillColor: "#4cc9f0", fillOpacity: 0.85, weight: 2 })
-      .bindPopup(`<strong>Coordenadas guardadas</strong><br>${lat.toFixed(6)}, ${lng.toFixed(6)}`)
-      .addTo(state.layer).openPopup();
-    setTimeout(()=> state.layer.removeLayer(marker), 1500);
     render();
   };
   state.map.on('click', state.mapClickHandler);
 }
-
 function stopLocating(){
   state.locatingId = null;
   document.body.style.cursor = "default";
-  document.getElementById("locatingPill").style.display = "none";
-  document.getElementById("hint").style.display = "none";
   if (state.mapClickHandler) { state.map.off('click', state.mapClickHandler); state.mapClickHandler = null; }
+  showLocatingUI(false);
 }
-
+function showLocatingUI(on){
+  const pill = document.getElementById("locatingPill");
+  const hint = document.getElementById("hint");
+  if (pill) pill.style.display = on ? "inline-block" : "none";
+  if (hint) hint.style.display = on ? "inline-block" : "none";
+}
 function saveCoordsToSeed(id, lat, lng){
-  // Actualiza en state.data
   const idx = state.data.findIndex(x => x.id === id);
   if (idx >= 0) { state.data[idx].lat = lat; state.data[idx].lng = lng; }
-
-  // Actualiza en localStorage (app.seed.data) en el formato del SEED original
   const raw = JSON.parse(localStorage.getItem("app.seed.data") || "[]");
   const j = raw.findIndex(x => x.id === id);
   if (j >= 0) {
@@ -226,13 +235,24 @@ function setupUI(){
     });
   });
 
-  const addModal = document.getElementById("addModal");
-  document.getElementById("btnAdd").addEventListener("click", ()=> addModal.showModal());
-  document.getElementById("closeModal").addEventListener("click", ()=> addModal.close());
-  document.getElementById("cancelAdd").addEventListener("click", ()=> addModal.close());
-  document.getElementById("btnReset").addEventListener("click", ()=>{ localStorage.clear(); location.reload(); });
+  // Admin buttons (se ocultan si ADMIN=false)
+  setupAdminVisibility();
 
-  document.getElementById("addForm").addEventListener("submit", (e)=>{
+  // Eventos admin
+  const addModal = document.getElementById("addModal");
+  document.getElementById("btnAdd")?.addEventListener("click", ()=> addModal.showModal());
+  document.getElementById("closeModal")?.addEventListener("click", ()=> addModal.close());
+  document.getElementById("cancelAdd")?.addEventListener("click", ()=> addModal.close());
+  document.getElementById("btnReset")?.addEventListener("click", ()=>{ if(!ADMIN) return; localStorage.clear(); location.reload(); });
+  document.getElementById("btnExport")?.addEventListener("click", ()=>{ if(!ADMIN) return; exportFrozenSeed(); });
+
+  // Cancelar “Ubicar” con ESC o clic en la píldora
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") stopLocating(); });
+  document.getElementById("locatingPill")?.addEventListener("click", stopLocating);
+
+  // Submit del modal (solo si ADMIN)
+  document.getElementById("addForm")?.addEventListener("submit", (e)=>{
+    if (!ADMIN) return;
     e.preventDefault();
     const fd = new FormData(e.target);
     const item = {
@@ -251,7 +271,7 @@ function setupUI(){
     }
     state.data.push(item); updateCount(); render(); addModal.close(); focusOn(item.id);
 
-    // También lo añadimos al seed (app.seed.data) mapeando categoría inversa
+    // Guardar en seed original (app.seed.data)
     const TYPE_MAP = {
       "Alojamientos": "alojamiento",
       "Restaurantes": "restaurante",
@@ -272,12 +292,18 @@ function setupUI(){
     });
     localStorage.setItem("app.seed.data", JSON.stringify(raw));
   });
-
-  // Exportar seed congelado
-  document.getElementById("btnExport").addEventListener("click", exportFrozenSeed);
 }
 
-// ---------- Exportar seed congelado ----------
+function setupAdminVisibility(){
+  const ids = ["btnAdd","btnExport","btnReset","hint","addModal"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = ADMIN ? "" : "none";
+  });
+  if (!ADMIN) showLocatingUI(false);
+}
+
+// ---------- Exportar seed congelado (solo ADMIN) ----------
 function exportFrozenSeed(){
   const data = JSON.parse(localStorage.getItem("app.seed.data") || "[]");
   if (!Array.isArray(data) || !data.length) { alert("No hay datos en app.seed.data"); return; }
@@ -296,19 +322,16 @@ const LS_KEYS = { version: "app.seed.version", data: "app.seed.data" };
 export function applySeedWithVersioning(storage = window.localStorage) {
   const currentVersion = storage.getItem(LS_KEYS.version);
   const needsReset = currentVersion !== SEED_VERSION;
-
   if (needsReset) {
     storage.clear();
     storage.setItem(LS_KEYS.data, JSON.stringify(SEED_DATA));
     storage.setItem(LS_KEYS.version, SEED_VERSION);
     return { applied: true, reason: currentVersion ? "version_changed" : "first_seed" };
   }
-
   if (!storage.getItem(LS_KEYS.data)) {
     storage.setItem(LS_KEYS.data, JSON.stringify(SEED_DATA));
     return { applied: true, reason: "rehydrate_missing_data" };
   }
-
   return { applied: false, reason: "up_to_date" };
 }
 
@@ -326,7 +349,6 @@ export function getSeedData() {
   return raw ? JSON.parse(raw) : [];
 }
 `;
-
   const blob = new Blob([file], { type: "text/javascript" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -344,3 +366,4 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   initMap();
   render();
 });
+
