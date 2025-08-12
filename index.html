@@ -14,6 +14,7 @@
   />
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j7kGKuX3sI5Yucs5cjox96D65V+1GPLtfRVz5Ks="
     crossorigin=""
     defer
   ></script>
@@ -23,30 +24,66 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root{ --bg:#0b1020; --panel:#12172a; --muted:#778; --text:#eaf0ff; --primary:#4cc9f0; --primary-700:#2496bf; --accent:#80ffdb; --card:#171d35; --chip:#1f2745; }
+    :root{
+      --bg:#0b1020; --panel:#12172a; --muted:#778; --text:#eaf0ff;
+      --primary:#4cc9f0; --primary-700:#2496bf; --accent:#80ffdb;
+      --card:#171d35; --chip:#1f2745; --ok:#3adb8b; --warn:#ffd166;
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; color:var(--text); background:linear-gradient(180deg,#0b1020 0%, #101737 100%); }
-    header{ position:sticky; top:0; z-index:5; background:rgba(11,16,32,.75); backdrop-filter: blur(12px); border-bottom:1px solid #ffffff12; }
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      color:var(--text); background:linear-gradient(180deg,#0b1020 0%, #101737 100%);
+    }
+    header{
+      position:sticky; top:0; z-index:5;
+      background:rgba(11,16,32,.75); backdrop-filter: blur(12px);
+      border-bottom:1px solid #ffffff12;
+    }
     .wrap{max-width:1200px; margin:0 auto; padding:16px 20px;}
     .brand{display:flex; align-items:center; gap:12px}
-    .brand .logo{ width:36px; height:36px; border-radius:10px; background: conic-gradient(from 180deg at 50% 50%, var(--primary), var(--accent), var(--primary)); box-shadow: 0 0 0 2px #ffffff0f inset, 0 10px 30px #0008; }
+    .brand .logo{
+      width:36px; height:36px; border-radius:10px;
+      background: conic-gradient(from 180deg at 50% 50%, var(--primary), var(--accent), var(--primary));
+      box-shadow: 0 0 0 2px #ffffff0f inset, 0 10px 30px #0008;
+    }
     .brand h1{font-size:1.1rem; margin:0}
     .muted{color:var(--muted)}
+
     .toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center }
-    .search{ flex:1; min-width:220px; display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid #ffffff14; border-radius:12px; padding:10px 12px; }
+    .search{
+      flex:1; min-width:220px; display:flex; align-items:center; gap:8px;
+      background:var(--panel); border:1px solid #ffffff14; border-radius:12px; padding:10px 12px;
+    }
     .search input{ all:unset; flex:1; color:var(--text); font-size:14px; letter-spacing:.2px; }
     .actions{display:flex; gap:10px; flex-wrap:wrap}
-    button, .chip{ border:0; cursor:pointer; border-radius:999px; padding:10px 14px; font-weight:600; color:var(--text); background:var(--primary); transition:all .2s ease; box-shadow:0 6px 20px #00c2ff22; }
+    button, .chip{
+      border:0; cursor:pointer; border-radius:999px; padding:10px 14px; font-weight:600;
+      color:var(--text); background:var(--primary); transition:all .2s ease;
+      box-shadow:0 6px 20px #00c2ff22;
+    }
     button:hover{background:var(--primary-700)}
     .chip{ background:var(--chip); color:#d9e2ff; box-shadow:none; border:1px solid #ffffff12 }
     .chip.active{background:var(--primary); color:#00111a; border-color:transparent}
     .chip .dot{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:8px; vertical-align:-1px}
-    .grid{ display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; padding:16px 20px; max-width:1200px; margin:0 auto; }
-    @media (max-width: 920px){ .grid{grid-template-columns: 1fr} #map{order:2; height:420px} }
-    .card{ background:var(--card); border:1px solid #ffffff12; border-radius:16px; padding:14px; display:flex; gap:12px; align-items:flex-start; }
+    .grid{
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; padding:16px 20px; max-width:1200px; margin:0 auto;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns: 1fr}
+      #map{order:2; height:420px}
+    }
+
+    .card{
+      background:var(--card); border:1px solid #ffffff12; border-radius:16px;
+      padding:14px; display:flex; gap:12px; align-items:flex-start;
+    }
     .card + .card{margin-top:10px}
-    .avatar{ width:56px; height:56px; border-radius:12px; flex:0 0 56px; background:#223; display:grid; place-content:center; font-weight:700; color:#9bdcff; border:1px solid #ffffff14; }
+    .avatar{
+      width:56px; height:56px; border-radius:12px; flex:0 0 56px;
+      background:#223; display:grid; place-content:center; font-weight:700; color:#9bdcff;
+      border:1px solid #ffffff14;
+    }
     .card h3{margin:2px 0 6px; font-size:1rem}
     .badge{display:inline-flex; align-items:center; gap:6px; font-size:.72rem; padding:4px 8px; border-radius:999px; background:#1f2748; color:#bcd}
     .badge .dot{width:8px; height:8px; border-radius:50%}
@@ -58,18 +95,10 @@
     .cta{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
     .cta .ghost{ background:transparent; border:1px solid #ffffff22; box-shadow:none; color:#dff3ff }
     #map{height:560px; border:1px solid #ffffff12; border-radius:16px; overflow:hidden}
-    dialog{ width:min(720px, 92vw); border:1px solid #ffffff22; border-radius:16px; background:#0e152e; color:#eaf0ff; padding:0; box-shadow: 0 20px 80px #000a; }
-    dialog::backdrop{background:#0008}
-    .modal-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid #ffffff18}
-    .modal-body{padding:16px 18px}
-    .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    .form-grid .full{grid-column: 1 / -1}
-    label{display:block; font-size:.85rem; margin-bottom:6px; color:#b9c4ff}
-    input[type="text"], input[type="tel"], input[type="url"], select, textarea{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid #ffffff22; background:#0b1026; color:#eaf0ff }
-    textarea{min-height:80px; resize:vertical}
-    .modal-foot{display:flex; justify-content:flex-end; gap:10px; padding:14px 18px; border-top:1px solid #ffffff18}
-    .helper{font-size:.8rem; color:#9db0ff}
+
     .pill{display:inline-block; padding:6px 10px; background:#13204a; border-radius:999px; font-size:.78rem; color:#cfe6ff}
+    .locating{ background:#261f05; border:1px solid #ffe08a; color:#ffe08a; }
+    .hint{font-size:.86rem; color:#ffe08a; margin-left:auto}
   </style>
 </head>
 <body>
@@ -79,6 +108,7 @@
         <div class="logo" aria-hidden="true"></div>
         <h1>Caburgua Turístico <span class="muted">• Guía de Servicios</span></h1>
         <span class="pill right" id="countPill">0 lugares</span>
+        <span class="pill locating" id="locatingPill" style="display:none">Modo ubicar activo: clic en el mapa para guardar lat,lng</span>
       </div>
 
       <div class="toolbar">
@@ -98,7 +128,9 @@
 
         <div class="actions">
           <button id="btnAdd">Añadir lugar</button>
-          <button id="btnReset" class="ghost">Reiniciar datos</button>
+          <button id="btnExport" class="chip">Exportar seed</button>
+          <button id="btnReset" class="chip">Reiniciar datos</button>
+          <span class="hint" id="hint" style="display:none">Haz clic en el mapa para guardar.</span>
         </div>
       </div>
     </div>
@@ -117,14 +149,19 @@
         <button type="button" id="closeModal" class="ghost">Cerrar</button>
       </div>
       <div class="modal-body">
-        <p class="helper">Si no sabes las coordenadas: en Google Maps → clic derecho → “¿Qué hay aquí?” y copia lat,lng.</p>
+        <p class="helper">
+          Rellena los datos. Si no sabes las coordenadas, abre Google Maps, busca el lugar, clic derecho → “¿Qué hay aquí?” y copia <strong>lat,lng</strong>.
+        </p>
         <div class="form-grid">
           <div><label>Nombre</label><input required name="name" type="text" placeholder="Ej: Cabañas Vista Caburgua" /></div>
           <div><label>Categoría</label>
             <select required name="category">
               <option value="">Seleccionar…</option>
-              <option>Alojamientos</option><option>Restaurantes</option>
-              <option>Abastecimiento</option><option>Actividades Outdoor</option><option>Parques</option>
+              <option>Alojamientos</option>
+              <option>Restaurantes</option>
+              <option>Abastecimiento</option>
+              <option>Actividades Outdoor</option>
+              <option>Parques</option>
             </select>
           </div>
           <div class="full"><label>Dirección</label><input name="address" type="text" placeholder="Ruta S-911 km 3, Caburgua" /></div>
@@ -143,7 +180,6 @@
     </form>
   </dialog>
 
-  <!-- JS modular -->
-  <script type="module" src="./src/main.js?v=5"></script>
+  <script type="module" src="./src/main.js?v=6"></script>
 </body>
 </html>
