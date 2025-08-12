@@ -1,6 +1,6 @@
-// ===================== src/data/seedData.js (ESM) =====================
-// Usa esta versión para forzar reset del cache al publicar
-export const SEED_VERSION = "2025-08-11-public-geocode-2";
+// ===================== src/data/seedData.js (FROZEN/ESM) =====================
+// Cambia esta versión cuando edites datos -> auto-reset del cache
+export const SEED_VERSION = "2025-08-11-frozen-1";
 
 // Esquema de item:
 // { id, type: "alojamiento"|"restaurante"|"abastecimiento"|"outdoor"|"parque",
@@ -45,11 +45,7 @@ export const SEED_DATA = [
 ];
 
 // ==================== LocalStorage + Autoreset ====================
-const LS_KEYS = {
-  version: "app.seed.version",
-  data:    "app.seed.data",
-  geocoded:"app.seed.geocoded"
-};
+const LS_KEYS = { version: "app.seed.version", data: "app.seed.data" };
 
 /** Aplica seed y limpia cache si cambia la versión */
 export function applySeedWithVersioning(storage = window.localStorage) {
@@ -60,94 +56,29 @@ export function applySeedWithVersioning(storage = window.localStorage) {
     storage.clear();
     storage.setItem(LS_KEYS.data, JSON.stringify(SEED_DATA));
     storage.setItem(LS_KEYS.version, SEED_VERSION);
-    storage.setItem(LS_KEYS.geocoded, "false");
     return { applied: true, reason: currentVersion ? "version_changed" : "first_seed" };
   }
 
   if (!storage.getItem(LS_KEYS.data)) {
     storage.setItem(LS_KEYS.data, JSON.stringify(SEED_DATA));
-    if (!storage.getItem(LS_KEYS.geocoded)) storage.setItem(LS_KEYS.geocoded, "false");
     return { applied: true, reason: "rehydrate_missing_data" };
   }
+
   return { applied: false, reason: "up_to_date" };
 }
 
-/**
- * Geocodifica con servicios 100% públicos con CORS:
- * 1) geocode.maps.co (Nominatim con CORS)
- * 2) Photon (komoot.io) como respaldo
- */
-export async function geocodeMissingCoords(storage = window.localStorage) {
-  const parsed  = JSON.parse(storage.getItem(LS_KEYS.data) || "[]");
-  const already = storage.getItem(LS_KEYS.geocoded) === "true";
-  if (!Array.isArray(parsed) || parsed.length === 0) return { done: false, reason: "no_data" };
-  if (already) return { done: false, reason: "already_geocoded" };
-
-  const updated = [];
-  for (const item of parsed) {
-    if (item?.coords?.lat && item?.coords?.lng) { updated.push(item); continue; }
-    if (!item.address) { updated.push(item); continue; }
-
-    const query = encodeURIComponent(`${item.name}, ${item.address}, Caburgua, Pucón, Chile`);
-    let got = null;
-
-    // 1) geocode.maps.co (Nominatim con CORS)
-    try {
-      const u1 = `https://geocode.maps.co/search?q=${query}&format=json&limit=1&accept-language=es`;
-      const r1 = await fetch(u1);
-      if (r1.ok) {
-        const j1 = await r1.json();
-        if (Array.isArray(j1) && j1[0]?.lat && j1[0]?.lon) {
-          got = { lat: parseFloat(j1[0].lat), lng: parseFloat(j1[0].lon) };
-        }
-      }
-    } catch {}
-
-    // 2) Photon (Komoot) – fallback (coords en [lon, lat])
-    if (!got) {
-      try {
-        const u2 = `https://photon.komoot.io/api/?q=${query}&limit=1&lang=es`;
-        const r2 = await fetch(u2);
-        if (r2.ok) {
-          const j2 = await r2.json();
-          const f = j2?.features?.[0];
-          if (f?.geometry?.coordinates?.length >= 2) {
-            const [lon, lat] = f.geometry.coordinates;
-            got = { lat: parseFloat(lat), lng: parseFloat(lon) };
-          }
-        }
-      } catch {}
-    }
-
-    updated.push(got ? { ...item, coords: got } : item);
-
-    // rate-limit amable para no abusar
-    await new Promise(r => setTimeout(r, 1000));
-  }
-
-  storage.setItem(LS_KEYS.data, JSON.stringify(updated));
-  storage.setItem(LS_KEYS.geocoded, "true");
-
-  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-    window.dispatchEvent(new CustomEvent("seed:geocoded", { detail: { count: updated.length } }));
-  }
-  return { done: true, reason: "ok", count: updated.length };
-}
-
-/** Inicializa el seed y lanza geocoder en segundo plano */
+/** Inicializa el seed (sin geocodificador) */
 export async function initSeed() {
   const status = applySeedWithVersioning();
-  geocodeMissingCoords().catch(() => {});
   if (typeof window !== "undefined") {
     window.SEED_VERSION = SEED_VERSION;
-    window.SEED_DATA    = JSON.parse(localStorage.getItem(LS_KEYS.data) || "[]");
+    window.SEED_DATA = JSON.parse(localStorage.getItem(LS_KEYS.data) || "[]");
   }
   return status;
 }
 
-/** Lectura de datos para la app */
+/** Lectura de datos */
 export function getSeedData() {
   const raw = localStorage.getItem(LS_KEYS.data);
   return raw ? JSON.parse(raw) : [];
 }
-
